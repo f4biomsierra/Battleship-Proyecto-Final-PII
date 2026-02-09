@@ -50,10 +50,11 @@ public class Battleship {
         tabP2 = new char[8][8];
         vidasP1 = new int[8][8];
         vidasP2 = new int[8][8];
-        for (int contador=0;contador< 8;contador++) {
-            Arrays.fill(tabP1[contador], '~');
-            Arrays.fill(tabP2[contador], '~');
+        for (int i = 0; i < 8; i++) {
+            Arrays.fill(tabP1[i], '~');
+            Arrays.fill(tabP2[i], '~');
         }
+        turnoJugador1 = true;
     }
     
     
@@ -85,13 +86,15 @@ public class Battleship {
             if (vObj[f][c] <= 0) {
                 objetivo[f][c] = 'X';
                 regenerar(objetivo, vObj);
-                if (esVictoria(objetivo)) return "WIN";
+                if (esVictoria(objetivo)) {
+                    return "WIN"; // El Main manejará quién ganó
+                }
                 turnoJugador1 = !turnoJugador1;
-                return "¡HUNDIDO! Los barcos se han movido.";
+                return "¡HUNDIDO!";
             }
             regenerar(objetivo, vObj);
             turnoJugador1 = !turnoJugador1;
-            return "¡Impacto! Pero el barco resiste y se mueve.";
+            return "¡Impacto! El barco se movió.";
         }
         return "Ya disparaste aquí.";
     }
@@ -99,27 +102,34 @@ public class Battleship {
     
     private static void regenerar(char[][] tab, int[][] vid) {
         List<Object[]> barcos = new ArrayList<>();
-        for(int contador=0;contador<8;contador++) {
-            for(int contador2=0;contador2<8;contador2++) {
-                if(tab[contador][contador2] != '~' && tab[contador][contador2] != 'X' && tab[contador][contador2] != 'F') {
-                    barcos.add(new Object[]{tab[contador][contador2], vid[contador][contador2]});
-                    tab[contador][contador2] = '~'; vid[contador][contador2] = 0;
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if (tab[i][j] != '~' && tab[i][j] != 'X' && tab[i][j] != 'F') {
+                    barcos.add(new Object[]{tab[i][j], vid[i][j]});
+                    tab[i][j] = '~';
+                    vid[i][j] = 0;
                 }
             }
         }
         Random r = new Random();
-        for(Object[] b : barcos) {
+        for (Object[] b : barcos) {
             int nf, nc;
-            do { nf = r.nextInt(8); nc = r.nextInt(8); } while(tab[nf][nc] != '~');
-            tab[nf][nc] = (char)b[0]; vid[nf][nc] = (int)b[1];
+            do {
+                nf = r.nextInt(8);
+                nc = r.nextInt(8);
+            } while (tab[nf][nc] != '~');
+            tab[nf][nc] = (char) b[0];
+            vid[nf][nc] = (int) b[1];
         }
     }
     
     
     public static boolean esVictoria(char[][] t) {
-        for(char[] fila : t) {
-            for(char c : fila) {
-                if(c != '~' && c != 'X' && c != 'F') return false;
+        for (char[] fila : t) {
+            for (char c : fila) {
+                if (c != '~' && c != 'X' && c != 'F') {
+                    return false;
+                }
             }
         }
         return true;
@@ -128,16 +138,23 @@ public class Battleship {
     
     //--- Apartado de Jugador y Usuarios ---
     
-    //Verificar si existe un jugador con usuario y contraseña
-    public static boolean login(String usuario, String contra){
-        for(int contador=0;contador<players.size();contador++){
-            Player playerActual=players.get(contador);
-            if(playerActual.getUsername().equals(usuario) && playerActual.getPassword().equals(contra)){
-                userActual=playerActual;
-                return true;
+    
+    public static Player obtenerPlayer(String usuario, String contra) {
+        for (Player p : players) {
+            if (p.getUsername().equals(usuario) && p.getPassword().equals(contra)) {
+                return p;
             }
         }
-        return false;
+        return null;
+    }
+    
+    public static Player obtenerPlayerPorNombre(String usuario) {
+        for (Player p : players) {
+            if (p.getUsername().equals(usuario)) {
+                return p;
+            }
+        }
+        return null;
     }
     
     //Crear Jugador
@@ -150,6 +167,10 @@ public class Battleship {
         }
         players.add(new Player(usuario, contra));
         return true;
+    }
+    
+    public static void eliminarCuenta(Player p) {
+        players.remove(p);
     }
       
 }

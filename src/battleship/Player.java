@@ -26,7 +26,7 @@ public class Player {
     }
 
     public void setUsername(String usuario) {
-        this.username = username;
+        this.username = usuario;
     }
 
     public String getPassword() {
@@ -34,7 +34,7 @@ public class Player {
     }
 
     public void setPassword(String contra) {
-        this.password = password;
+        this.password = contra;
     }
 
     public int getPuntaje() {
@@ -46,15 +46,25 @@ public class Player {
     }
     
     //Guardar historial de partidas
-    public void addRegistro(String reporte){
-        for(int contador=registros.length-1;contador>0;contador--){
-            registros[contador]=registros[contador-1];
+    public void addRegistro(String reporte) {
+        for (int i = 9; i > 0; i--) {
+            registros[i] = registros[i - 1];
         }
-        registros[0]=reporte;
+        registros[0] = reporte;
     }
 
     public String[] getRegistros() {
         return registros;
+    }
+    
+    public int getPartidasJugadas() {
+        int count = 0;
+        for (String r : registros) {
+            if (r != null) {
+                count++;
+            }
+        }
+        return count;
     }
     
     
