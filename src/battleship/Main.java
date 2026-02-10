@@ -24,10 +24,15 @@ public class Main extends JFrame {
     Player jugador2;
     boolean enJuego = false;
     JLabel lblEstadoTurno = new JLabel("Esperando inicio...", SwingConstants.CENTER);
+    //Imágenes de barcos
+    ImageIcon imgPortaaviones;
+    ImageIcon imgAcorazado;
+    ImageIcon imgSubmarino;
+    ImageIcon imgDestructor;
     
     public Main(){
         setTitle("Battleship");
-        setSize(1100,700);
+        setSize(1280,720);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         
         crearPantallaJuego();
@@ -41,9 +46,43 @@ public class Main extends JFrame {
         setVisible(true);
     }
     
+    public static ImageIcon cargarImagenBarcos(String nombre, int ancho, int alto) {
+        java.net.URL imgURL = Main.class.getResource("/recursos/" + nombre);
+        if (imgURL != null) {
+            ImageIcon iconoOriginal = new ImageIcon(imgURL);
+            Image imgEscalada = iconoOriginal.getImage().getScaledInstance(ancho, alto, Image.SCALE_SMOOTH);
+            return new ImageIcon(imgEscalada);
+        }
+        return null;
+    }
+    
+    
+    public static ImageIcon cargarImagen(String nombre) {
+        java.net.URL imgURL = Main.class.getResource("/recursos/" + nombre);
+        if (imgURL != null) {
+            return new ImageIcon(imgURL);
+        }
+        return null;
+    }
+    
     
     void crearLogin() {
+        JLabel fondoLogin = new JLabel(cargarImagen("wallpaper2.gif"));
+        fondoLogin.setLayout(new GridBagLayout());
+
         JPanel panel = new JPanel(new GridBagLayout());
+        panel.setOpaque(false);
+        
+        Font fuenteBasic=new Font("Basic", Font.BOLD, 14);
+
+        JLabel lblUsuario = new JLabel("Usuario:");
+        lblUsuario.setForeground(Color.WHITE);
+        lblUsuario.setFont(fuenteBasic);
+
+        JLabel lblPassword = new JLabel("Password:");
+        lblPassword.setForeground(Color.WHITE);
+        lblPassword.setFont(fuenteBasic);
+
         JTextField txtUser = new JTextField(15);
         JPasswordField txtPass = new JPasswordField(15);
         JButton btnLogin = new JButton("Login");
@@ -51,16 +90,21 @@ public class Main extends JFrame {
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
+
         gbc.gridx = 0;
         gbc.gridy = 0;
-        panel.add(new JLabel("Usuario:"), gbc);
+        panel.add(lblUsuario, gbc);
+
         gbc.gridx = 1;
         panel.add(txtUser, gbc);
+
         gbc.gridx = 0;
         gbc.gridy = 1;
-        panel.add(new JLabel("Password:"), gbc);
+        panel.add(lblPassword, gbc);
+
         gbc.gridx = 1;
         panel.add(txtPass, gbc);
+
         gbc.gridx = 0;
         gbc.gridy = 2;
         panel.add(btnLogin, gbc);
@@ -70,7 +114,7 @@ public class Main extends JFrame {
         btnLogin.addActionListener(e -> {
             Player p = Battleship.obtenerPlayer(txtUser.getText(), new String(txtPass.getPassword()));
             if (p != null) {
-                Battleship.userActual = p; // El que entra primero siempre es el P1
+                Battleship.userActual = p;
                 cl.show(contenedor, "MENU");
             } else {
                 JOptionPane.showMessageDialog(this, "Error de Login");
@@ -85,14 +129,21 @@ public class Main extends JFrame {
             }
         });
 
-        contenedor.add(panel, "LOGIN");
+        fondoLogin.add(panel);
+        contenedor.add(fondoLogin, "LOGIN");
     }
 
     
     void crearMenu() {
+        JLabel fondoMenu=new JLabel(cargarImagen("wallpaper_menu.png"));
+        fondoMenu.setLayout(new GridBagLayout());
+        
         JPanel panelCentrado = new JPanel(new GridBagLayout());
+        panelCentrado.setOpaque(false);
         
         JPanel panelBotones = new JPanel(new GridBagLayout());
+        panelBotones.setOpaque(false);
+        
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10); // Espacio entre botones
         gbc.gridx = 0;
@@ -247,7 +298,8 @@ public class Main extends JFrame {
         salir.addActionListener(e -> cl.show(contenedor, "LOGIN"));
 
         panelCentrado.add(panelBotones);
-        contenedor.add(panelCentrado, "MENU");
+        fondoMenu.add(panelCentrado);
+        contenedor.add(fondoMenu, "MENU");
     }
     
     
@@ -291,9 +343,11 @@ public class Main extends JFrame {
     
     JPanel crearGrid(JButton[][] matriz, boolean esP1) {
         JPanel p = new JPanel(new GridLayout(8, 8));
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
+        for(int i=0; i<8; i++){
+            for(int j=0; j<8; j++){
                 matriz[i][j] = new JButton("~");
+                matriz[i][j].setPreferredSize(new Dimension(60, 60));
+                matriz[i][j].setFocusPainted(false);
                 final int f = i, c = j;
                 matriz[i][j].addActionListener(e -> {
                     if (!enJuego) {
@@ -364,20 +418,41 @@ public class Main extends JFrame {
             }
         }
 
-        for (int contador = 0; contador < 8; contador++) {
-            for (int contador2 = 0; contador2 < 8; contador2++) {
-                botones1[contador][contador2].setText(String.valueOf(Battleship.tabP1[contador][contador2]));
+        for (int contador=0;contador<8;contador++) {
+            for (int contador2=0;contador2< 8;contador2++) {
+                char c1 = Battleship.tabP1[contador][contador2];
+                botones1[contador][contador2].setText("");
+                botones1[contador][contador2].setIcon(obtenerIconoBarco(c1)); // ===== CAMBIO
                 char c2 = Battleship.tabP2[contador][contador2];
                 // Modo Arcade oculta barcos enemigos
                 if ("ARCADE".equals(Battleship.modoJuego) && c2 != 'X' && c2 != 'F') {
                     botones2[contador][contador2].setText("~");
                 } else {
-                    botones2[contador][contador2].setText(String.valueOf(c2));
+                    botones2[contador][contador2].setText("");
+                    botones2[contador][contador2].setIcon(obtenerIconoBarco(c2)); // ===== CAMBIO
                 }
             }
         }
 
         // ... resto de la lógica para pintar los botones ~ , X, F
+    }
+    
+    private ImageIcon obtenerIconoBarco(char c) {
+        int tam = 60; // Tamaño de la celda del botón
+        switch (c) {
+            case 'P':
+                return cargarImagenBarcos("portaaviones.png", tam, tam);
+            case 'A':
+                return cargarImagenBarcos("acorazado.png", tam, tam);
+            case 'S':
+                return cargarImagenBarcos("submarino.png", tam, tam);
+            case 'D':
+                return cargarImagenBarcos("destructor.png", tam, tam);
+            case 'X': // Si quieres icono para impacto
+                return cargarImagenBarcos("fuego.gif", tam, tam);
+            default:
+                return null;
+        }
     }
 
     
