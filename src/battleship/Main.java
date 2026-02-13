@@ -257,15 +257,15 @@ public class Main extends JFrame {
 
         
         JButton[] botonesMenu = {jugar, loginJ2, config, perfil, reportes, salir};
-        for (int i = 0; i < botonesMenu.length; i++) {
-            botonesMenu[i].setPreferredSize(tamanoBoton);
-            botonesMenu[i].setMinimumSize(tamanoBoton);
-            botonesMenu[i].setMaximumSize(tamanoBoton);
-            botonesMenu[i].setFont(fuenteBotones);
-            botonesMenu[i].setFocusPainted(false);
+        for (int contador = 0; contador < botonesMenu.length; contador++) {
+            botonesMenu[contador].setPreferredSize(tamanoBoton);
+            botonesMenu[contador].setMinimumSize(tamanoBoton);
+            botonesMenu[contador].setMaximumSize(tamanoBoton);
+            botonesMenu[contador].setFont(fuenteBotones);
+            botonesMenu[contador].setFocusPainted(false);
             
-            gbc.gridy = i;
-            panelBotones.add(botonesMenu[i], gbc);
+            gbc.gridy = contador;
+            panelBotones.add(botonesMenu[contador], gbc);
         }
 
         config.addActionListener(e -> {
@@ -351,16 +351,26 @@ public class Main extends JFrame {
                 final int f = i, c = j;
                 matriz[i][j].addActionListener(e -> {
                     if (!enJuego) {
-                        // Colocación
-                        if (esP1 && p1Colocados < Battleship.dificultadActual) {
-                            if (Battleship.colocarBarco(f, c, p1Colocados, true)) {
-                                p1Colocados++;
+                        // --- VALIDACIÓN DE TABLERO CORRECO ---
+                        if (esP1) { // Si es el grid de la izquierda
+                            if (p1Colocados < Battleship.dificultadActual) {
+                                if (Battleship.colocarBarco(f, c, p1Colocados, true)) {
+                                    p1Colocados++;
+                                }
+                            } else {
+                                JOptionPane.showMessageDialog(this, "Ya colocaste tus barcos. ¡Toca el turno del Jugador 2!");
                             }
-                        } else if (!esP1 && p2Colocados < Battleship.dificultadActual) {
-                            if (Battleship.colocarBarco(f, c, p2Colocados, false)) {
-                                p2Colocados++;
+                        } else { // Si es el grid de la derecha
+                            if (p1Colocados < Battleship.dificultadActual) {
+                                JOptionPane.showMessageDialog(this, "Primero debe colocar sus barcos el Jugador 1");
+                            } else if (p2Colocados < Battleship.dificultadActual) {
+                                if (Battleship.colocarBarco(f, c, p2Colocados, false)) {
+                                    p2Colocados++;
+                                }
                             }
                         }
+                        // ---------------------------------------
+
                         if (p1Colocados == Battleship.dificultadActual && p2Colocados == Battleship.dificultadActual) {
                             enJuego = true;
                             JOptionPane.showMessageDialog(this, "¡Batalla!");
@@ -401,14 +411,17 @@ public class Main extends JFrame {
         if (!enJuego) {
             // Fase de colocación
             if (p1Colocados < Battleship.dificultadActual) {
-                lblEstadoTurno.setText("COLOCA P1: " + Battleship.userActual.getUsername());
+                // Buscamos el nombre del barco que toca poner según el correlativo (p1Colocados % 4)
+                String barcoActual = Battleship.nombresBarcos[p1Colocados % 4];
+                lblEstadoTurno.setText(Battleship.userActual.getUsername() + " - Coloca tu: " + barcoActual);
                 lblEstadoTurno.setForeground(Color.BLUE);
             } else {
-                lblEstadoTurno.setText("COLOCA P2: " + Battleship.jugador2.getUsername());
+                String barcoActual = Battleship.nombresBarcos[p2Colocados % 4];
+                lblEstadoTurno.setText(Battleship.jugador2.getUsername() + " - Coloca tu: " + barcoActual);
                 lblEstadoTurno.setForeground(Color.MAGENTA);
             }
         } else {
-            // Fase de combate
+            // Fase de combate (se mantiene igual)
             if (Battleship.turnoJugador1) {
                 lblEstadoTurno.setText("TURNO DE: " + Battleship.userActual.getUsername());
                 lblEstadoTurno.setForeground(Color.BLUE);
@@ -418,18 +431,24 @@ public class Main extends JFrame {
             }
         }
 
-        for (int contador=0;contador<8;contador++) {
-            for (int contador2=0;contador2< 8;contador2++) {
+        for (int contador = 0; contador < 8; contador++) {
+            for (int contador2 = 0; contador2 < 8; contador2++) {
+                // --- Actualizar Tablero Jugador 1 ---
                 char c1 = Battleship.tabP1[contador][contador2];
                 botones1[contador][contador2].setText("");
-                botones1[contador][contador2].setIcon(obtenerIconoBarco(c1)); // ===== CAMBIO
+                botones1[contador][contador2].setIcon(obtenerIconoBarco(c1));
+
+                // --- Actualizar Tablero Jugador 2 ---
                 char c2 = Battleship.tabP2[contador][contador2];
-                // Modo Arcade oculta barcos enemigos
-                if ("ARCADE".equals(Battleship.modoJuego) && c2 != 'X' && c2 != 'F') {
-                    botones2[contador][contador2].setText("~");
+
+                if ("ARCADE".equals(Battleship.modoJuego) && enJuego && c2 != 'X' && c2 != 'F') {
+                    // Si es ARCADE y está oculto:
+                    botones2[contador][contador2].setIcon(obtenerIconoBarco('~')); // Forzamos icono de mar
+                    botones2[contador][contador2].setText(""); // Quitamos el texto para que no se encime
                 } else {
+                    // Si es TUTORIAL o el barco ya fue golpeado/fallado:
                     botones2[contador][contador2].setText("");
-                    botones2[contador][contador2].setIcon(obtenerIconoBarco(c2)); // ===== CAMBIO
+                    botones2[contador][contador2].setIcon(obtenerIconoBarco(c2));
                 }
             }
         }

@@ -22,6 +22,7 @@ public class Battleship {
     
     public static final String[] codigosBarcos={"PA", "AZ", "SM", "DT"};
     public static final int[] resistencia={5, 4, 3, 2};
+    public static final String[] nombresBarcos = {"Portaaviones", "Acorazado", "Submarino", "Destructor"};
     
     
     //--- Apartado de Configuración de Dificultad ---
@@ -72,7 +73,7 @@ public class Battleship {
         return false;
     }
     
-    
+
     public static String bombardear(int f, int c) {
         char[][] objetivo = turnoJugador1 ? tabP2 : tabP1;
         int[][] vObj = turnoJugador1 ? vidasP2 : vidasP1;
@@ -82,16 +83,34 @@ public class Battleship {
             turnoJugador1 = !turnoJugador1;
             return "¡Agua!";
         } else if (objetivo[f][c] != 'X' && objetivo[f][c] != 'F') {
+            // Guardamos el tipo de barco antes de procesar el impacto
+            char tipoChar = objetivo[f][c];
+            String nombreBarco = "";
+
+            // Identificar nombre según el código
+            if (tipoChar == 'P') {
+                nombreBarco = nombresBarcos[0];
+            } else if (tipoChar == 'A') {
+                nombreBarco = nombresBarcos[1];
+            } else if (tipoChar == 'S') {
+                nombreBarco = nombresBarcos[2];
+            } else if (tipoChar == 'D') {
+                nombreBarco = nombresBarcos[3];
+            }
+
             vObj[f][c]--;
+
             if (vObj[f][c] <= 0) {
                 objetivo[f][c] = 'X';
                 regenerar(objetivo, vObj);
                 if (esVictoria(objetivo)) {
-                    return "WIN"; // El Main manejará quién ganó
+                    return "WIN";
                 }
                 turnoJugador1 = !turnoJugador1;
-                return "¡HUNDIDO!";
+                // RETORNO MODIFICADO:
+                return "¡HUNDIDO! Has destruido un " + nombreBarco;
             }
+
             regenerar(objetivo, vObj);
             turnoJugador1 = !turnoJugador1;
             return "¡Impacto! El barco se movió.";
