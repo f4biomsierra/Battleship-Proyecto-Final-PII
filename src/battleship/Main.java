@@ -8,44 +8,49 @@ package battleship;
 import javax.swing.*;
 import java.awt.*;
 import java.util.*;
-
+import static javax.swing.JFrame.EXIT_ON_CLOSE;
 
 public class Main extends JFrame {
-    
-    CardLayout cl=new CardLayout();
-    JPanel contenedor=new JPanel(cl); 
-    int p1Colocados = 0, p2Colocados = 0;
-    JTextField usuario=new JTextField(10);
-    JPasswordField contra=new JPasswordField(10);
-    
-    JButton[][] botones1=new JButton[8][8];
-    JButton[][] botones2=new JButton[8][8];
-    boolean turnoJugador1=true;
+
+    CardLayout cl = new CardLayout();
+    JPanel contenedor = new JPanel(cl);
+    public int p1Colocados = 0, p2Colocados = 0;
+    JTextField usuario = new JTextField(10);
+    JPasswordField contra = new JPasswordField(10);
+
+    public JButton[][] botones1 = new JButton[8][8];
+    public JButton[][] botones2 = new JButton[8][8];
+    boolean turnoJugador1 = true;
     Player jugador2;
-    boolean enJuego = false;
+    public boolean enJuego = false;
     JLabel lblEstadoTurno = new JLabel("Esperando inicio...", SwingConstants.CENTER);
     //Imágenes de barcos
     ImageIcon imgPortaaviones;
     ImageIcon imgAcorazado;
     ImageIcon imgSubmarino;
     ImageIcon imgDestructor;
-    
-    public Main(){
+
+    public Main() {
         setTitle("Battleship");
-        setSize(1280,720);
+        setSize(1280, 720);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        
-        crearPantallaJuego();
+        setAlwaysOnTop(true); // Mantener la ventana siempre al frente
+
+        // Llamada al método movido a Battleship
+        JPanel pantallaJuego = Battleship.crearPantallaJuego(this, botones1, botones2, lblEstadoTurno, cl, contenedor);
+        contenedor.add(pantallaJuego, "JUEGO");
+
         crearLogin();
         crearMenu();
-        
-        
+
         add(contenedor);
         cl.show(contenedor, "LOGIN");
         setLocationRelativeTo(null);
         setVisible(true);
+        toFront(); // Traer la ventana al frente
+        requestFocus(); // Dar foco a la ventana
     }
-    
+
     public static ImageIcon cargarImagenBarcos(String nombre, int ancho, int alto) {
         java.net.URL imgURL = Main.class.getResource("/recursos/" + nombre);
         if (imgURL != null) {
@@ -55,8 +60,7 @@ public class Main extends JFrame {
         }
         return null;
     }
-    
-    
+
     public static ImageIcon cargarImagen(String nombre) {
         java.net.URL imgURL = Main.class.getResource("/recursos/" + nombre);
         if (imgURL != null) {
@@ -64,16 +68,15 @@ public class Main extends JFrame {
         }
         return null;
     }
-    
-    
+
     void crearLogin() {
         JLabel fondoLogin = new JLabel(cargarImagen("wallpaper2.gif"));
         fondoLogin.setLayout(new GridBagLayout());
 
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setOpaque(false);
-        
-        Font fuenteBasic=new Font("Basic", Font.BOLD, 14);
+
+        Font fuenteBasic = new Font("Basic", Font.BOLD, 14);
 
         JLabel lblUsuario = new JLabel("Usuario:");
         lblUsuario.setForeground(Color.WHITE);
@@ -112,9 +115,9 @@ public class Main extends JFrame {
         panel.add(btnCrear, gbc);
 
         btnLogin.addActionListener(e -> {
-            Player p = Battleship.obtenerPlayer(txtUser.getText(), new String(txtPass.getPassword()));
-            if (p != null) {
-                Battleship.userActual = p;
+            Player jugador = Battleship.obtenerPlayer(txtUser.getText(), new String(txtPass.getPassword()));
+            if (jugador != null) {
+                Battleship.userActual = jugador;
                 cl.show(contenedor, "MENU");
             } else {
                 JOptionPane.showMessageDialog(this, "Error de Login");
@@ -122,7 +125,21 @@ public class Main extends JFrame {
         });
 
         btnCrear.addActionListener(e -> {
-            if (Battleship.crearPlayer(txtUser.getText(), new String(txtPass.getPassword()))) {
+            String usuario = txtUser.getText();
+            String password = new String(txtPass.getPassword());
+
+            // Validar que no estén vacíos
+            if (usuario.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Debes ingresar un nombre de usuario");
+                return;
+            }
+
+            if (password.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Debes ingresar una contraseña");
+                return;
+            }
+
+            if (Battleship.crearPlayer(usuario, password)) {
                 JOptionPane.showMessageDialog(this, "Registrado");
             } else {
                 JOptionPane.showMessageDialog(this, "Ya existe");
@@ -133,36 +150,46 @@ public class Main extends JFrame {
         contenedor.add(fondoLogin, "LOGIN");
     }
 
-    
     void crearMenu() {
-        JLabel fondoMenu=new JLabel(cargarImagen("wallpaper_menu.png"));
+        JLabel fondoMenu = new JLabel(cargarImagen("wallpaper_menu.png"));
         fondoMenu.setLayout(new GridBagLayout());
-        
+
         JPanel panelCentrado = new JPanel(new GridBagLayout());
         panelCentrado.setOpaque(false);
-        
+
         JPanel panelBotones = new JPanel(new GridBagLayout());
         panelBotones.setOpaque(false);
-        
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10); // Espacio entre botones
         gbc.gridx = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        
+
         JButton jugar = new JButton("Jugar");
         JButton config = new JButton("Configuración");
         JButton salir = new JButton("Cerrar Sesión");
         JButton perfil = new JButton("Mi Perfil");
         JButton reportes = new JButton("Reportes");
         JButton loginJ2 = new JButton("Login Jugador 2 (Pendiente)");
-        
-        
-        loginJ2.addActionListener(e -> {
+
+        loginJ2.addActionListener(evento -> {
             if (Battleship.jugador2 == null) {
-                // Lógica de Login (ya la tienes)
-                String u = JOptionPane.showInputDialog("Usuario J2:");
-                String p3 = JOptionPane.showInputDialog("Password J2:");
-                Player p2 = Battleship.obtenerPlayer(u, p3);
+                // Lógica de Login
+                String usuario = JOptionPane.showInputDialog(this, "Usuario J2:");
+
+                // Validar que no canceló o dejó vacío
+                if (usuario == null || usuario.trim().isEmpty()) {
+                    return; // Salir sin hacer nada
+                }
+
+                String password = JOptionPane.showInputDialog(this, "Password J2:");
+
+                // Validar que no canceló o dejó vacío
+                if (password == null || password.trim().isEmpty()) {
+                    return; // Salir sin hacer nada
+                }
+
+                Player p2 = Battleship.obtenerPlayer(usuario, password);
 
                 if (p2 != null) {
                     if (p2 == Battleship.userActual) {
@@ -172,6 +199,8 @@ public class Main extends JFrame {
                         loginJ2.setText("J2: " + p2.getUsername() + " (Editar)");
                         JOptionPane.showMessageDialog(this, "Jugador 2 listo.");
                     }
+                } else {
+                    JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos");
                 }
             } else {
                 // NUEVA LÓGICA: Si ya hay un J2, permitir editarlo o quitarlo
@@ -180,24 +209,29 @@ public class Main extends JFrame {
                         "Opciones J2", 0, JOptionPane.QUESTION_MESSAGE, null, opciones, opciones[3]);
 
                 if (sel == 0) { // Cambiar Usuario
-                    String nuevo = JOptionPane.showInputDialog("Nuevo nombre para J2:");
-                    if (nuevo != null && Battleship.obtenerPlayerPorNombre(nuevo) == null) {
+                    String nuevo = JOptionPane.showInputDialog(this, "Nuevo nombre para J2:");
+                    if (nuevo != null && !nuevo.trim().isEmpty() && Battleship.obtenerPlayerPorNombre(nuevo) == null) {
                         Battleship.jugador2.setUsername(nuevo);
                         loginJ2.setText("J2: " + nuevo + " (Editar)");
+                        JOptionPane.showMessageDialog(this, "Usuario actualizado");
+                    } else if (nuevo != null && !nuevo.trim().isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "Ese nombre ya existe");
                     }
                 } else if (sel == 1) { // Cambiar Pass
-                    String pass = JOptionPane.showInputDialog("Nueva contraseña para J2:");
-                    if (pass != null) {
+                    String pass = JOptionPane.showInputDialog(this, "Nueva contraseña para J2:");
+                    if (pass != null && !pass.trim().isEmpty()) {
                         Battleship.jugador2.setPassword(pass);
+                        JOptionPane.showMessageDialog(this, "Contraseña actualizada");
                     }
                 } else if (sel == 2) { // Quitar J2
                     Battleship.jugador2 = null;
                     loginJ2.setText("Login Jugador 2 (Pendiente)");
+                    JOptionPane.showMessageDialog(this, "Jugador 2 removido");
                 }
             }
         });
-        
-        perfil.addActionListener(e -> {
+
+        perfil.addActionListener(evento -> {
             Object[] opciones = {"Cambiar Usuario", "Cambiar Password", "Eliminar Cuenta", "Cerrar"};
             int seleccion = JOptionPane.showOptionDialog(this,
                     "Usuario: " + Battleship.userActual.getUsername() + "\nPuntos: " + Battleship.userActual.getPuntaje(),
@@ -237,9 +271,8 @@ public class Main extends JFrame {
                     break;
             }
         });
-        
 
-        jugar.addActionListener(e -> {
+        jugar.addActionListener(evento -> {
             if (Battleship.jugador2 == null) {
                 JOptionPane.showMessageDialog(this, "¡Debes ingresar un Jugador 2 primero!");
                 return;
@@ -248,14 +281,14 @@ public class Main extends JFrame {
             p1Colocados = 0;
             p2Colocados = 0;
             enJuego = false;
-            actualizarTablero();
+            Battleship.actualizarTablero(this, botones1, lblEstadoTurno);
+            Battleship.actualizarTablero(this, botones2, lblEstadoTurno);
             cl.show(contenedor, "JUEGO");
         });
-        
+
         Dimension tamanoBoton = new Dimension(300, 50);
         Font fuenteBotones = new Font("Arial", Font.BOLD, 16);
 
-        
         JButton[] botonesMenu = {jugar, loginJ2, config, perfil, reportes, salir};
         for (int contador = 0; contador < botonesMenu.length; contador++) {
             botonesMenu[contador].setPreferredSize(tamanoBoton);
@@ -263,26 +296,30 @@ public class Main extends JFrame {
             botonesMenu[contador].setMaximumSize(tamanoBoton);
             botonesMenu[contador].setFont(fuenteBotones);
             botonesMenu[contador].setFocusPainted(false);
-            
+
             gbc.gridy = contador;
             panelBotones.add(botonesMenu[contador], gbc);
         }
 
-        config.addActionListener(e -> {
+        config.addActionListener(evento -> {
             String[] opciones = {"EASY", "NORMAL", "EXPERT", "GENIUS"};
-            String seleccion = (String) JOptionPane.showInputDialog(this, "Seleccione Dificultad", "Config", 
-                                JOptionPane.QUESTION_MESSAGE, null, opciones, opciones[1]);
-            if(seleccion != null) Battleship.setDificultad(seleccion);
-            
+            String seleccion = (String) JOptionPane.showInputDialog(this, "Seleccione Dificultad", "Config",
+                    JOptionPane.QUESTION_MESSAGE, null, opciones, opciones[1]);
+            if (seleccion != null) {
+                Battleship.setDificultad(seleccion);
+            }
+
             String[] modos = {"TUTORIAL", "ARCADE"};
-            String modo=(String) JOptionPane.showInputDialog(this, "Seleccione Modo", "Config", 
-                                JOptionPane.QUESTION_MESSAGE, null, modos, modos[0]);
-            if(modo!= null) Battleship.modoJuego = modo;
+            String modo = (String) JOptionPane.showInputDialog(this, "Seleccione Modo", "Config",
+                    JOptionPane.QUESTION_MESSAGE, null, modos, modos[0]);
+            if (modo != null) {
+                Battleship.modoJuego = modo;
+            }
         });
-        
-        reportes.addActionListener(e -> {
+
+        reportes.addActionListener(evento -> {
             StringBuilder sb = new StringBuilder("--- RANKING ---\n");
-            Battleship.players.sort((a, b) -> b.getPuntaje() - a.getPuntaje());
+            Battleship.players.sort((jugadorA, jugadorB) -> jugadorB.getPuntaje() - jugadorA.getPuntaje());
             for (Player p2 : Battleship.players) {
                 sb.append(p2.getUsername()).append(": ").append(p2.getPuntaje()).append(" pts\n");
             }
@@ -295,188 +332,15 @@ public class Main extends JFrame {
             JOptionPane.showMessageDialog(this, sb.toString());
         });
 
-        salir.addActionListener(e -> cl.show(contenedor, "LOGIN"));
+        salir.addActionListener(evento -> cl.show(contenedor, "LOGIN"));
 
         panelCentrado.add(panelBotones);
         fondoMenu.add(panelCentrado);
         contenedor.add(fondoMenu, "MENU");
     }
-    
-    
-    void crearPantallaJuego() {
-        JPanel panel = new JPanel(new BorderLayout());
 
-        
-        lblEstadoTurno.setFont(new Font("Arial", Font.BOLD, 18));
-        lblEstadoTurno.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        JPanel grids = new JPanel(new GridLayout(1, 2, 40, 0));
-        grids.add(crearGrid(botones1, true));
-        grids.add(crearGrid(botones2, false));
-
-        JButton btnRendirse = new JButton("RENDIRSE");
-        btnRendirse.setBackground(Color.RED);
-        btnRendirse.setForeground(Color.WHITE);
-
-        
-        btnRendirse.addActionListener(e -> {
-            if (enJuego) {
-                // Si es turno de P1 (turnoJugador1 = true), el ganador es el J2
-                Player ganador = Battleship.turnoJugador1 ? Battleship.jugador2 : Battleship.userActual;
-                Player perdedor = Battleship.turnoJugador1 ? Battleship.userActual : Battleship.jugador2;
-
-                ganador.addPuntaje(3);
-                ganador.addRegistro(ganador.getUsername() + " triunfó ante "+ perdedor.getUsername());
-                perdedor.addRegistro(perdedor.getUsername()+ " se rindió ante "+ ganador.getUsername());
-
-                JOptionPane.showMessageDialog(this, "¡" + perdedor.getUsername() + " se rindió!\nGanador: " + ganador.getUsername());
-            }
-            enJuego = false;
-            cl.show(contenedor, "MENU");
-        });
-
-        panel.add(lblEstadoTurno, BorderLayout.NORTH);
-        panel.add(grids, BorderLayout.CENTER);
-        panel.add(btnRendirse, BorderLayout.SOUTH);
-        contenedor.add(panel, "JUEGO");
-    }
-    
-    JPanel crearGrid(JButton[][] matriz, boolean esP1) {
-        JPanel p = new JPanel(new GridLayout(8, 8));
-        for(int i=0; i<8; i++){
-            for(int j=0; j<8; j++){
-                matriz[i][j] = new JButton("~");
-                matriz[i][j].setPreferredSize(new Dimension(60, 60));
-                matriz[i][j].setFocusPainted(false);
-                final int f = i, c = j;
-                matriz[i][j].addActionListener(e -> {
-                    if (!enJuego) {
-                        // --- VALIDACIÓN DE TABLERO CORRECO ---
-                        if (esP1) { // Si es el grid de la izquierda
-                            if (p1Colocados < Battleship.dificultadActual) {
-                                if (Battleship.colocarBarco(f, c, p1Colocados, true)) {
-                                    p1Colocados++;
-                                }
-                            } else {
-                                JOptionPane.showMessageDialog(this, "Ya colocaste tus barcos. ¡Toca el turno del Jugador 2!");
-                            }
-                        } else { // Si es el grid de la derecha
-                            if (p1Colocados < Battleship.dificultadActual) {
-                                JOptionPane.showMessageDialog(this, "Primero debe colocar sus barcos el Jugador 1");
-                            } else if (p2Colocados < Battleship.dificultadActual) {
-                                if (Battleship.colocarBarco(f, c, p2Colocados, false)) {
-                                    p2Colocados++;
-                                }
-                            }
-                        }
-                        // ---------------------------------------
-
-                        if (p1Colocados == Battleship.dificultadActual && p2Colocados == Battleship.dificultadActual) {
-                            enJuego = true;
-                            JOptionPane.showMessageDialog(this, "¡Batalla!");
-                        }
-                    } else {
-                        // Ataque
-                        if ((Battleship.turnoJugador1 && !esP1) || (!Battleship.turnoJugador1 && esP1)) {
-                            String res = Battleship.bombardear(f, c);
-                            if (res.equals("WIN")) {
-                                Player pGanador = Battleship.turnoJugador1 ? Battleship.userActual : Battleship.jugador2;
-                                Player perdedor = Battleship.turnoJugador1 ? Battleship.jugador2 : Battleship.userActual;
-
-                                pGanador.addPuntaje(3); // Ejemplo de puntos
-                                pGanador.addRegistro("Victoria de "+ pGanador.getUsername() +" contra " + perdedor.getUsername());
-                                perdedor.addRegistro("Victoria de " + pGanador.getUsername() +" contra " + perdedor.getUsername());
-
-                                JOptionPane.showMessageDialog(this, "¡EL GANADOR ES: " + pGanador.getUsername() + "!");
-                                enJuego=false;
-                                cl.show(contenedor, "MENU");
-                            } else{
-                                JOptionPane.showMessageDialog(this, res);
-                            }
-                        }
-                    }
-                    actualizarTablero();
-                });
-                p.add(matriz[i][j]);
-            }
-        }
-        return p;
-    }
-
-    void actualizarTablero() {
-        if (botones1[0][0] == null || Battleship.tabP1 == null) {
-            return;
-        }
-
-        if (!enJuego) {
-            // Fase de colocación
-            if (p1Colocados < Battleship.dificultadActual) {
-                // Buscamos el nombre del barco que toca poner según el correlativo (p1Colocados % 4)
-                String barcoActual = Battleship.nombresBarcos[p1Colocados % 4];
-                lblEstadoTurno.setText(Battleship.userActual.getUsername() + " - Coloca tu: " + barcoActual);
-                lblEstadoTurno.setForeground(Color.BLUE);
-            } else {
-                String barcoActual = Battleship.nombresBarcos[p2Colocados % 4];
-                lblEstadoTurno.setText(Battleship.jugador2.getUsername() + " - Coloca tu: " + barcoActual);
-                lblEstadoTurno.setForeground(Color.MAGENTA);
-            }
-        } else {
-            // Fase de combate (se mantiene igual)
-            if (Battleship.turnoJugador1) {
-                lblEstadoTurno.setText("TURNO DE: " + Battleship.userActual.getUsername());
-                lblEstadoTurno.setForeground(Color.BLUE);
-            } else {
-                lblEstadoTurno.setText("TURNO DE: " + Battleship.jugador2.getUsername());
-                lblEstadoTurno.setForeground(Color.RED);
-            }
-        }
-
-        for (int contador = 0; contador < 8; contador++) {
-            for (int contador2 = 0; contador2 < 8; contador2++) {
-                // --- Actualizar Tablero Jugador 1 ---
-                char c1 = Battleship.tabP1[contador][contador2];
-                botones1[contador][contador2].setText("");
-                botones1[contador][contador2].setIcon(obtenerIconoBarco(c1));
-
-                // --- Actualizar Tablero Jugador 2 ---
-                char c2 = Battleship.tabP2[contador][contador2];
-
-                if ("ARCADE".equals(Battleship.modoJuego) && enJuego && c2 != 'X' && c2 != 'F') {
-                    // Si es ARCADE y está oculto:
-                    botones2[contador][contador2].setIcon(obtenerIconoBarco('~')); // Forzamos icono de mar
-                    botones2[contador][contador2].setText(""); // Quitamos el texto para que no se encime
-                } else {
-                    // Si es TUTORIAL o el barco ya fue golpeado/fallado:
-                    botones2[contador][contador2].setText("");
-                    botones2[contador][contador2].setIcon(obtenerIconoBarco(c2));
-                }
-            }
-        }
-
-        // ... resto de la lógica para pintar los botones ~ , X, F
-    }
-    
-    private ImageIcon obtenerIconoBarco(char c) {
-        int tam = 60; // Tamaño de la celda del botón
-        switch (c) {
-            case 'P':
-                return cargarImagenBarcos("portaaviones.png", tam, tam);
-            case 'A':
-                return cargarImagenBarcos("acorazado.png", tam, tam);
-            case 'S':
-                return cargarImagenBarcos("submarino.png", tam, tam);
-            case 'D':
-                return cargarImagenBarcos("destructor.png", tam, tam);
-            case 'X': // Si quieres icono para impacto
-                return cargarImagenBarcos("fuego.gif", tam, tam);
-            default:
-                return null;
-        }
-    }
-
-    
-    public static void main(String[] args){
+    public static void main(String[] args) {
         new Main();
     }
-    
+
 }
